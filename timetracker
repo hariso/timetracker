@@ -1,0 +1,3 @@
+#!/bin/bash
+INSTALLATION_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+java -jar $INSTALLATION_DIR/timetracker-0.1.jar $1 $2
