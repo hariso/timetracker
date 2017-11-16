@@ -56,7 +56,7 @@ public class Main {
 
     private static void show(String dateString) throws IOException {
         Duration duration = getTotal(dateString != null ? dateString : TODAY);
-        System.out.println(duration.toString());
+        System.out.println(duration.toHours() % 24 + " hours " + duration.toMinutes() % 60 + " minutes");
     }
 
     private static void stop() throws IOException {
