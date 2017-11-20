@@ -9,8 +9,12 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalField;
+import java.time.temporal.WeekFields;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.time.LocalDateTime.now;
@@ -23,6 +27,9 @@ public class Main {
     static final String STOP_PREFIX = "to:";
 
     static final String SHOW_CMD = "show";
+
+    static final String SHOW_WEEK_CMD = "show-week";
+
     static final String TODAY = "today";
     static final String YESTERDAY = "yesterday";
 
@@ -32,6 +39,8 @@ public class Main {
     static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     static final DateTimeFormatter DF = DateTimeFormatter.BASIC_ISO_DATE;
 
+    static final TemporalField weekOfYear = WeekFields.of(Locale.getDefault()).weekOfWeekBasedYear();
+
     public static void main(String[] args) throws IOException {
         if (args.length != 1 && args.length != 2) {
             printHelp();
@@ -40,23 +49,23 @@ public class Main {
 
         ensureFileExists();
 
-        if (START_CMD.equals(args[0])) {
-            start();
+        switch (args[0]) {
+            case START_CMD:
+                start();
+                break;
+            case STOP_CMD:
+                stop();
+                break;
+            case SHOW_CMD:
+                final String dateString = args.length == 2 ? args[1] :  null;
+                show(dateString);
+                break;
+            case SHOW_WEEK_CMD:
+                showWeek();
+                break;
+            default:
+                System.out.println("Unknown command: " + args[0]);
         }
-
-        if (STOP_CMD.equals(args[0])) {
-            stop();
-        }
-
-        if (SHOW_CMD.equals(args[0])) {
-            final String dateString = args.length == 2 ? args[1] :  null;
-            show(dateString);
-        }
-    }
-
-    private static void show(String dateString) throws IOException {
-        Duration duration = getTotal(dateString != null ? dateString : TODAY);
-        System.out.println(duration.toHours() % 24 + " hours " + duration.toMinutes() % 60 + " minutes");
     }
 
     private static void stop() throws IOException {
@@ -118,9 +127,28 @@ public class Main {
             .collect(Collectors.toList());
     }
 
-    private static Duration getTotal(String dateString) throws IOException {
-        LocalDate date = parseDate(dateString);
+    private static void showWeek() throws IOException {
+        int currentWeekNumber = getWeekOfYear(now());
 
+        Duration duration = getTotal(_date -> getWeekOfYear(_date) == currentWeekNumber);
+        print(duration);
+    }
+
+    private static int getWeekOfYear(LocalDateTime date) {
+        return date.get(weekOfYear);
+    }
+
+    private static void show(String dateString) throws IOException {
+        LocalDate date = parseDate(dateString != null ? dateString : TODAY);
+        Duration duration = getTotal(_date -> _date.toLocalDate().equals(date));
+        print(duration);
+    }
+
+    private static void print(Duration duration) {
+        System.out.println(duration.toHours() + " hours " + duration.toMinutes() % 60 + " minutes");
+    }
+
+    private static Duration getTotal(Predicate<LocalDateTime> dateFilter) throws IOException {
         List<String> timeStrings = readAllLines();
         if (timeStrings.isEmpty())
             return Duration.ZERO;
@@ -136,7 +164,7 @@ public class Main {
         for (String timeStringWithPrefix : timeStrings) {
             if (timeStringWithPrefix.startsWith(START_PREFIX)) {
                 String timeString = timeStringWithPrefix.replaceFirst(START_PREFIX, "");
-                if (!fromString(timeString).toLocalDate().equals(date)) {
+                if (!dateFilter.test(fromString(timeString))) {
                     continue;
                 }
                 currentStart = fromString(timeString);
@@ -144,7 +172,7 @@ public class Main {
 
             if (timeStringWithPrefix.startsWith(STOP_PREFIX)) {
                 currentEnd = fromString(timeStringWithPrefix.replaceFirst(STOP_PREFIX, ""));
-                if (!currentEnd.toLocalDate().equals(date)) {
+                if (!dateFilter.test(currentEnd)) {
                     continue;
                 }
                 total = total.plus(Duration.between(currentStart, currentEnd));
