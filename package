@@ -1,0 +1,2 @@
+#!/bin/bash
+zip -j dist/timetracker.zip timetracker target/timetracker-0.1.jar

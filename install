@@ -1,0 +1,4 @@
+#!/bin/bash
+mkdir -p ~/apps/timetracker/
+cp timetracker target/timetracker-0.1.jar ~/apps/timetracker/
+chmod u+x ~/apps/timetracker/timetracker
