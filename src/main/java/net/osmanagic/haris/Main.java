@@ -55,6 +55,7 @@ public class Main {
                 break;
             case STOP_CMD:
                 stop();
+                show(null);
                 break;
             case SHOW_CMD:
                 final String dateString = args.length == 2 ? args[1] :  null;
