@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardOpenOption;
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,7 +59,7 @@ public class Main {
                 show(null);
                 break;
             case SHOW_CMD:
-                final String dateString = args.length == 2 ? args[1] :  null;
+                final String dateString = args.length == 2 ? args[1] : null;
                 show(dateString);
                 break;
             case SHOW_WEEK_CMD:
@@ -193,10 +194,25 @@ public class Main {
             date = LocalDate.now();
         } else if (YESTERDAY.equals(dateString)) {
             date = LocalDate.now().minusDays(1);
+        } else if (isDayOrdinal(dateString)) {
+            date = LocalDate.now().with(DayOfWeek.of(intValue(dateString)));
         } else {
             date = LocalDate.parse(dateString, DF);
         }
         return date;
+    }
+
+    private static boolean isDayOrdinal(String dateString) {
+        int ordinal = intValue(dateString);
+        return 1 <= ordinal && ordinal <= 7;
+    }
+
+    private static int intValue(String dateString) {
+        try {
+            return Integer.valueOf(dateString);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private static LocalDateTime fromString(String timeString) {
@@ -210,8 +226,8 @@ public class Main {
     private static void printHelp() {
         System.out.println(
             "Available commands:\n" +
-            "start, stop, show <date>.\n" +
-            "<date> can be 'today', 'yesterday' or a date in following format: 20161231"
+                "start, stop, show <date>.\n" +
+                "<date> can be 'today', 'yesterday', number of day in week (e.g. show 2 for Tuesday) or a date in following format: 20161231"
         );
     }
 }
